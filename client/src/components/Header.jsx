@@ -7,16 +7,18 @@ function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
+  const [userRole, setUserRole] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const location = useLocation();
 
   // Check if user is logged in
   useEffect(() => {
     const checkLoginStatus = () => {
-      const userToken = localStorage.getItem('authToken');
       const storedUsername = localStorage.getItem('username');
-      setIsLoggedIn(!!userToken);
+      const storedRole = localStorage.getItem('role');
+      setIsLoggedIn(!!storedUsername);
       setUsername(storedUsername || 'User');
+      setUserRole(storedRole || '');
     };
 
     checkLoginStatus(); // Initial check
@@ -66,10 +68,11 @@ function Header() {
 
   // Handle logout
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
     localStorage.removeItem('username');
+    localStorage.removeItem('role');
     setIsLoggedIn(false);
     setUsername('');
+    setUserRole('');
     setDropdownOpen(false);
   };
 
@@ -84,10 +87,23 @@ function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/' ? 'text-red-500' : ''}`}>Home</Link>
-            <Link to="/shop" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/shop' ? 'text-red-500' : ''}`}>Shop</Link>
-            <Link to="/collections" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/collections' ? 'text-red-500' : ''}`}>Collections</Link>
-            <Link to="/sale" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/sale' ? 'text-red-500' : ''}`}>Sale</Link>
+            {userRole === 'seller' ? (
+              // Seller Navigation
+              <>
+                <Link to="/dashboard" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/dashboard' ? 'text-red-500' : ''}`}>Dashboard</Link>
+                <Link to="/products" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/products' ? 'text-red-500' : ''}`}>My Products</Link>
+                <Link to="/add-product" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/add-product' ? 'text-red-500' : ''}`}>Add Product</Link>
+                <Link to="/orders" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/orders' ? 'text-red-500' : ''}`}>Orders</Link>
+              </>
+            ) : (
+              // Customer Navigation
+              <>
+                <Link to="/" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/' ? 'text-red-500' : ''}`}>Home</Link>
+                <Link to="/shop" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/shop' ? 'text-red-500' : ''}`}>Shop</Link>
+                <Link to="/categories" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/categories' ? 'text-red-500' : ''}`}>Categories</Link>
+                <Link to="/deals" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/deals' ? 'text-red-500' : ''}`}>Deals</Link>
+              </>
+            )}
           </nav>
 
           {/* Desktop Icons & User Area */}
@@ -189,34 +205,71 @@ function Header() {
         <div className="md:hidden bg-white border-t shadow-lg">
           <div className="container mx-auto px-4 py-3">
             <nav className="flex flex-col">
-              <Link 
-                to="/" 
-                className={`text-gray-700 hover:text-red-500 font-medium py-3 ${location.pathname === '/' ? 'text-red-500' : ''}`} 
-                onClick={toggleMenu}
-              >
-                Home
-              </Link>
-              <Link 
-                to="/shop" 
-                className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/shop' ? 'text-red-500' : ''}`} 
-                onClick={toggleMenu}
-              >
-                Shop
-              </Link>
-              <Link 
-                to="/collections" 
-                className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/collections' ? 'text-red-500' : ''}`} 
-                onClick={toggleMenu}
-              >
-                Collections
-              </Link>
-              <Link 
-                to="/sale" 
-                className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/sale' ? 'text-red-500' : ''}`} 
-                onClick={toggleMenu}
-              >
-                Sale
-              </Link>
+              {userRole === 'seller' ? (
+                // Seller Mobile Navigation
+                <>
+                  <Link 
+                    to="/dashboard" 
+                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/dashboard' ? 'text-red-500' : ''}`} 
+                    onClick={toggleMenu}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    to="/products" 
+                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/products' ? 'text-red-500' : ''}`} 
+                    onClick={toggleMenu}
+                  >
+                    My Products
+                  </Link>
+                  <Link 
+                    to="/add-product" 
+                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/add-product' ? 'text-red-500' : ''}`} 
+                    onClick={toggleMenu}
+                  >
+                    Add Product
+                  </Link>
+                  <Link 
+                    to="/orders" 
+                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/orders' ? 'text-red-500' : ''}`} 
+                    onClick={toggleMenu}
+                  >
+                    Orders
+                  </Link>
+                </>
+              ) : (
+                // Customer Mobile Navigation
+                <>
+                  <Link 
+                    to="/" 
+                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/' ? 'text-red-500' : ''}`} 
+                    onClick={toggleMenu}
+                  >
+                    Home
+                  </Link>
+                  <Link 
+                    to="/shop" 
+                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/shop' ? 'text-red-500' : ''}`} 
+                    onClick={toggleMenu}
+                  >
+                    Shop
+                  </Link>
+                  <Link 
+                    to="/categories" 
+                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/categories' ? 'text-red-500' : ''}`} 
+                    onClick={toggleMenu}
+                  >
+                    Categories
+                  </Link>
+                  <Link 
+                    to="/deals" 
+                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/deals' ? 'text-red-500' : ''}`} 
+                    onClick={toggleMenu}
+                  >
+                    Deals
+                  </Link>
+                </>
+              )}
 
               {isLoggedIn ? (
                 <div className="mt-2 pt-2 border-t border-gray-200">

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
 function Signup() {
@@ -8,6 +7,7 @@ function Signup() {
     name: '',
     email: '',
     password: '',
+    role: '',
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -28,6 +28,7 @@ function Signup() {
     if (!formData.email) newErrors.email = 'Required';
     if (!formData.password) newErrors.password = 'Required';
     else if (formData.password.length < 6) newErrors.password = 'Min 6 characters';
+    if (!formData.role) newErrors.role = 'Please select a role';
     return newErrors;
   };
 
@@ -43,17 +44,28 @@ function Signup() {
     setLoading(true); // Show loading spinner or disable submit button during request
 
     try {
-      // Send signup request to backend (assuming backend is running on localhost:8080)
-      const response = await axios.post('http://localhost:8080/signup', formData);
+      // Send signup request to backend
+      const response = await fetch('http://localhost:8081/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-      // If signup is successful, redirect to login page
-      console.log('Signup successful:', response.data);
-      
-      // Redirect user to the login page
-      navigate('/login');
+      const data = await response.json();
+
+      if (response.ok) {
+        // If signup is successful, redirect to login page
+        console.log('Signup successful:', data);
+        navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
+      } else {
+        // Server returned an error
+        setSignupError(data.error || 'Signup failed. Please try again.');
+      }
     } catch (error) {
-      setSignupError('Signup failed. Please try again.');
       console.error('Signup error:', error);
+      setSignupError('Cannot connect to server. Please try again later.');
     } finally {
       setLoading(false); // Hide loading spinner after request completes
     }
@@ -92,6 +104,39 @@ function Signup() {
                 onChange={handleChange}
               />
               {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">I want to</label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  className={`p-4 border rounded-lg text-center ${formData.role === 'customer' 
+                    ? 'border-red-500 bg-red-50 text-red-700' 
+                    : 'border-gray-300 hover:border-red-500 hover:bg-red-50'}`}
+                  onClick={() => {
+                    setFormData({ ...formData, role: 'customer' });
+                    if (errors.role) setErrors({ ...errors, role: '' });
+                  }}
+                >
+                  <div className="font-medium">Shop Products</div>
+                  <div className="text-sm text-gray-500">Register as Customer</div>
+                </button>
+                <button
+                  type="button"
+                  className={`p-4 border rounded-lg text-center ${formData.role === 'seller' 
+                    ? 'border-red-500 bg-red-50 text-red-700' 
+                    : 'border-gray-300 hover:border-red-500 hover:bg-red-50'}`}
+                  onClick={() => {
+                    setFormData({ ...formData, role: 'seller' });
+                    if (errors.role) setErrors({ ...errors, role: '' });
+                  }}
+                >
+                  <div className="font-medium">Sell Products</div>
+                  <div className="text-sm text-gray-500">Register as Seller</div>
+                </button>
+              </div>
+              {errors.role && <p className="mt-1 text-xs text-red-500">{errors.role}</p>}
             </div>
 
             <div className="mb-6 relative">

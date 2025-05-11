@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
 function Login() {
@@ -40,27 +39,33 @@ function Login() {
     setLoading(true); // Show loading spinner or disable submit button during request
 
     try {
-      // Send login request to backend (assuming backend is running on localhost:8080)
-      const response = await axios.post('http://localhost:8080/login', formData);
+      // Send login request to backend
+      const response = await fetch('http://localhost:8081/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-      // Extract token and user data
-      const { token, user } = response.data;
-      
-      // Store token and username in localStorage
-      localStorage.setItem('authToken', token);
-      
-      // Extract username from response or from email if not provided
-      const username = user?.name || user?.username || formData.email.split('@')[0];
-      localStorage.setItem('username', username);
+      const data = await response.json();
 
-      // Trigger storage event to update header component
-      window.dispatchEvent(new Event('storage'));
+      if (response.ok) {
+        // Store user data in localStorage
+        localStorage.setItem('username', data.name);
+        localStorage.setItem('role', data.role);
 
-      // Redirect user to dashboard or home page
-      navigate('/dashboard');
+        // Trigger storage event to update header
+        window.dispatchEvent(new Event('storage'));
+
+        // Navigate to home page
+        navigate('/');
+      } else {
+        setLoginError(data.error || 'Invalid email or password');
+      }
     } catch (error) {
-      setLoginError('Invalid email or password');
       console.error('Login error:', error);
+      setLoginError('Cannot connect to server. Please try again later.');
     } finally {
       setLoading(false); // Hide loading spinner after request completes
     }
