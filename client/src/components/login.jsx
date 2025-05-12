@@ -52,14 +52,20 @@ function Login() {
 
       if (response.ok) {
         // Store user data in localStorage
+        localStorage.setItem('token', 'dummy-token'); // We'll implement proper tokens later
+        localStorage.setItem('userId', data.id);
         localStorage.setItem('username', data.name);
         localStorage.setItem('role', data.role);
 
         // Trigger storage event to update header
         window.dispatchEvent(new Event('storage'));
 
-        // Navigate to home page
-        navigate('/');
+        // Navigate to seller dashboard if user is a seller, otherwise go to home
+        if (data.role === 'seller') {
+          navigate('/seller');
+        } else {
+          navigate('/');
+        }
       } else {
         setLoginError(data.error || 'Invalid email or password');
       }

@@ -56,9 +56,21 @@ function Signup() {
       const data = await response.json();
 
       if (response.ok) {
-        // If signup is successful, redirect to login page
-        console.log('Signup successful:', data);
-        navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
+        // Store user data in localStorage
+        localStorage.setItem('token', 'dummy-token'); // We'll implement proper tokens later
+        localStorage.setItem('userId', data.id);
+        localStorage.setItem('username', data.name);
+        localStorage.setItem('role', data.role);
+
+        // Trigger storage event to update header
+        window.dispatchEvent(new Event('storage'));
+
+        // Navigate to appropriate page based on role
+        if (data.role === 'seller') {
+          navigate('/seller/products');
+        } else {
+          navigate('/');
+        }
       } else {
         // Server returned an error
         setSignupError(data.error || 'Signup failed. Please try again.');

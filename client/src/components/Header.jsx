@@ -1,341 +1,194 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingCart, User, LogOut, ShoppingBag } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, LogOut, Package, PlusCircle, LayoutDashboard } from 'lucide-react';
 
-function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
-  const [userRole, setUserRole] = useState('');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+const Header = () => {
   const location = useLocation();
+  const isLoggedIn = localStorage.getItem('token');
+  const userRole = localStorage.getItem('role');
+  const username = localStorage.getItem('username');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Check if user is logged in
-  useEffect(() => {
-    const checkLoginStatus = () => {
-      const storedUsername = localStorage.getItem('username');
-      const storedRole = localStorage.getItem('role');
-      setIsLoggedIn(!!storedUsername);
-      setUsername(storedUsername || 'User');
-      setUserRole(storedRole || '');
-    };
-
-    checkLoginStatus(); // Initial check
-
-    // Update on login/logout in other tabs or app parts
-    window.addEventListener('storage', checkLoginStatus);
-
-    return () => {
-      window.removeEventListener('storage', checkLoginStatus);
-    };
-  }, []);
-
-  // Handle scroll effect for header
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownOpen && !event.target.closest('.user-dropdown')) {
-        setDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [dropdownOpen]);
-
-  // Toggle mobile menu
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-    // Close dropdown if open
-    if (dropdownOpen) setDropdownOpen(false);
-  };
-
-  // Toggle dropdown
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
-
-  // Handle logout
   const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
     localStorage.removeItem('username');
     localStorage.removeItem('role');
-    setIsLoggedIn(false);
-    setUsername('');
-    setUserRole('');
-    setDropdownOpen(false);
+    window.location.href = '/login';
   };
 
+  const navigation = userRole === 'seller' ? [
+    { name: 'Dashboard', href: '/seller', icon: LayoutDashboard },
+    { name: 'Products', href: '/seller/products', icon: Package },
+    { name: 'Add Product', href: '/seller/products/add', icon: PlusCircle },
+  ] : [
+    { name: 'Shop', href: '/shop', icon: ShoppingBag },
+    { name: 'Categories', href: '/categories', icon: Package },
+  ];
+
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-2' : 'bg-white py-4'}`}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
+    <header className="bg-white shadow-sm sticky top-0 z-50">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16 items-center">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
-            <h1 className="text-red-500 font-bold text-2xl md:text-3xl font-serif">MYRA</h1>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            {userRole === 'seller' ? (
-              // Seller Navigation
-              <>
-                <Link to="/dashboard" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/dashboard' ? 'text-red-500' : ''}`}>Dashboard</Link>
-                <Link to="/products" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/products' ? 'text-red-500' : ''}`}>My Products</Link>
-                <Link to="/add-product" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/add-product' ? 'text-red-500' : ''}`}>Add Product</Link>
-                <Link to="/orders" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/orders' ? 'text-red-500' : ''}`}>Orders</Link>
-              </>
-            ) : (
-              // Customer Navigation
-              <>
-                <Link to="/" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/' ? 'text-red-500' : ''}`}>Home</Link>
-                <Link to="/shop" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/shop' ? 'text-red-500' : ''}`}>Shop</Link>
-                <Link to="/categories" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/categories' ? 'text-red-500' : ''}`}>Categories</Link>
-                <Link to="/deals" className={`text-gray-700 hover:text-red-500 font-medium ${location.pathname === '/deals' ? 'text-red-500' : ''}`}>Deals</Link>
-              </>
-            )}
-          </nav>
-
-          {/* Desktop Icons & User Area */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Link to="/cart" className="p-2 text-gray-700 hover:text-red-500 relative">
-              <ShoppingCart size={20} />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                0
+          <div className="flex-shrink-0">
+            <Link to="/" className="flex items-center">
+              <ShoppingBag className="h-8 w-8 text-rose-500" />
+              <span className="ml-2 text-2xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 text-transparent bg-clip-text">
+                ShopEase
               </span>
             </Link>
+          </div>
 
-            {isLoggedIn ? (
-              <div className="relative user-dropdown">
-                <button 
-                  onClick={toggleDropdown}
-                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <span className="text-gray-700 font-medium hidden lg:inline-block">{username}</span>
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-500">
-                    <User size={16} />
-                  </div>
-                </button>
-                
-                {/* Dropdown Menu */}
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-10 border border-gray-100">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm text-gray-500">Signed in as</p>
-                      <p className="font-medium text-gray-800 truncate">{username}</p>
-                    </div>
-                    
-                    <Link to="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      <User size={16} className="mr-2 text-gray-500" />
-                      <span>My Profile</span>
-                    </Link>
-                    
-                    <Link to="/orders" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      <ShoppingBag size={16} className="mr-2 text-gray-500" />
-                      <span>My Orders</span>
-                    </Link>
-                    
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-500 hover:bg-gray-50 border-t border-gray-100"
-                    >
-                      <LogOut size={16} className="mr-2" />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link 
-                  to="/login" 
-                  className={`px-3 py-1 text-sm font-medium rounded transition-colors ${location.pathname === '/login' ? 'bg-red-500 text-white' : 'text-gray-700 hover:text-red-500'}`}
+          {/* Desktop Navigation */}
+          {isLoggedIn && (
+            <div className="hidden md:flex md:items-center md:space-x-6">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ease-in-out
+                      ${location.pathname === item.href
+                        ? 'text-rose-600 bg-rose-50'
+                        : 'text-gray-600 hover:text-rose-500 hover:bg-rose-50'}`}
+                  >
+                    <Icon className="h-5 w-5 mr-2" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* User Menu */}
+          <div className="hidden md:flex md:items-center md:space-x-6">
+            {!isLoggedIn ? (
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/login"
+                  className="text-gray-600 hover:text-rose-500 font-medium"
                 >
                   Login
                 </Link>
-                <Link 
-                  to="/signup" 
-                  className={`px-3 py-1 text-sm font-medium rounded transition-colors ${location.pathname === '/signup' ? 'bg-red-500 text-white' : 'text-gray-700 border border-red-500 hover:bg-red-500 hover:text-white'}`}
+                <Link
+                  to="/signup"
+                  className="bg-rose-500 text-white hover:bg-rose-600 px-4 py-2 rounded-md font-medium transition-colors duration-150"
                 >
-                  Sign up
+                  Sign Up
                 </Link>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 rounded-full bg-rose-100 flex items-center justify-center">
+                    <User className="h-5 w-5 text-rose-500" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-900">{username}</span>
+                    <span className="text-xs text-gray-500 capitalize">{userRole}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center text-gray-600 hover:text-rose-500 font-medium"
+                >
+                  <LogOut className="h-5 w-5 mr-2" />
+                  Logout
+                </button>
               </div>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex items-center space-x-3 md:hidden">
-            <Link to="/cart" className="p-1 text-gray-700 hover:text-red-500 relative">
-              <ShoppingCart size={20} />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                0
-              </span>
-            </Link>
-            
-            {isLoggedIn && (
-              <button className="p-1">
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-500">
-                  <User size={16} />
-                </div>
-              </button>
-            )}
-            
-            <button 
-              onClick={toggleMenu} 
-              className="p-1 text-gray-700 focus:outline-none"
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
             >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMobileMenuOpen ? (
+                <X className="block h-6 w-6" />
+              ) : (
+                <Menu className="block h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-white border-t shadow-lg">
-          <div className="container mx-auto px-4 py-3">
-            <nav className="flex flex-col">
-              {userRole === 'seller' ? (
-                // Seller Mobile Navigation
-                <>
-                  <Link 
-                    to="/dashboard" 
-                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/dashboard' ? 'text-red-500' : ''}`} 
-                    onClick={toggleMenu}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link 
-                    to="/products" 
-                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/products' ? 'text-red-500' : ''}`} 
-                    onClick={toggleMenu}
-                  >
-                    My Products
-                  </Link>
-                  <Link 
-                    to="/add-product" 
-                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/add-product' ? 'text-red-500' : ''}`} 
-                    onClick={toggleMenu}
-                  >
-                    Add Product
-                  </Link>
-                  <Link 
-                    to="/orders" 
-                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/orders' ? 'text-red-500' : ''}`} 
-                    onClick={toggleMenu}
-                  >
-                    Orders
-                  </Link>
-                </>
-              ) : (
-                // Customer Mobile Navigation
-                <>
-                  <Link 
-                    to="/" 
-                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/' ? 'text-red-500' : ''}`} 
-                    onClick={toggleMenu}
-                  >
-                    Home
-                  </Link>
-                  <Link 
-                    to="/shop" 
-                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/shop' ? 'text-red-500' : ''}`} 
-                    onClick={toggleMenu}
-                  >
-                    Shop
-                  </Link>
-                  <Link 
-                    to="/categories" 
-                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/categories' ? 'text-red-500' : ''}`} 
-                    onClick={toggleMenu}
-                  >
-                    Categories
-                  </Link>
-                  <Link 
-                    to="/deals" 
-                    className={`text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100 ${location.pathname === '/deals' ? 'text-red-500' : ''}`} 
-                    onClick={toggleMenu}
-                  >
-                    Deals
-                  </Link>
-                </>
-              )}
-
-              {isLoggedIn ? (
-                <div className="mt-2 pt-2 border-t border-gray-200">
-                  <div className="flex items-center py-2">
-                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-500 mr-2">
-                      <User size={16} />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Signed in as</p>
-                      <p className="font-medium text-gray-800">{username}</p>
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden py-4">
+            {isLoggedIn && (
+              <div className="space-y-2 pb-4">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={`flex items-center px-3 py-2 rounded-md text-base font-medium
+                        ${location.pathname === item.href
+                          ? 'text-rose-600 bg-rose-50'
+                          : 'text-gray-600 hover:text-rose-500 hover:bg-rose-50'}`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Icon className="h-5 w-5 mr-3" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+            {!isLoggedIn ? (
+              <div className="space-y-2 pt-4 border-t border-gray-200">
+                <Link
+                  to="/login"
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-rose-500 hover:bg-rose-50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-rose-500 hover:bg-rose-50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </div>
+            ) : (
+              <div className="pt-4 border-t border-gray-200">
+                <div className="flex items-center px-3 py-2">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center">
+                      <User className="h-6 w-6 text-rose-500" />
                     </div>
                   </div>
-                  
-                  <Link 
-                    to="/profile" 
-                    className="flex items-center text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100" 
-                    onClick={toggleMenu}
-                  >
-                    <User size={16} className="mr-2" />
-                    <span>My Profile</span>
-                  </Link>
-                  
-                  <Link 
-                    to="/orders" 
-                    className="flex items-center text-gray-700 hover:text-red-500 font-medium py-3 border-t border-gray-100" 
-                    onClick={toggleMenu}
-                  >
-                    <ShoppingBag size={16} className="mr-2" />
-                    <span>My Orders</span>
-                  </Link>
-                  
-                  <button 
+                  <div className="ml-3">
+                    <div className="text-base font-medium text-gray-800">{username}</div>
+                    <div className="text-sm font-medium text-gray-500 capitalize">{userRole}</div>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1">
+                  <button
                     onClick={() => {
                       handleLogout();
-                      toggleMenu();
-                    }} 
-                    className="flex items-center w-full text-red-500 font-medium py-3 border-t border-gray-100"
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex w-full items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-rose-500 hover:bg-rose-50"
                   >
-                    <LogOut size={16} className="mr-2" />
-                    <span>Logout</span>
+                    <LogOut className="h-5 w-5 mr-3" />
+                    Logout
                   </button>
                 </div>
-              ) : (
-                <div className="flex flex-col space-y-2 py-3 border-t border-gray-100">
-                  <Link 
-                    to="/login" 
-                    className={`px-4 py-2 text-center font-medium rounded transition-colors ${location.pathname === '/login' ? 'bg-red-500 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                    onClick={toggleMenu}
-                  >
-                    Login
-                  </Link>
-                  <Link 
-                    to="/signup" 
-                    className={`px-4 py-2 text-center font-medium rounded transition-colors ${location.pathname === '/signup' ? 'bg-red-500 text-white' : 'border border-red-500 text-gray-700 hover:bg-red-500 hover:text-white'}`}
-                    onClick={toggleMenu}
-                  >
-                    Sign up
-                  </Link>
-                </div>
-              )}
-            </nav>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </nav>
     </header>
   );
-}
+};
 
 export default Header;
