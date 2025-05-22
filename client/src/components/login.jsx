@@ -133,7 +133,9 @@ function Login() {
           font-weight: 600;
         }
       `}</style>
+      
       <main className="flex-grow flex items-center justify-center p-4">
+        
         <div className="w-full max-w-sm p-6 bg-white border border-purple-100 rounded-2xl login-card">
           <h1 className="mb-5 text-xl font-semibold text-center heading-text">Welcome Back</h1>
 

@@ -38,6 +38,8 @@ const SellerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-6">
+      <br/>
+      <br/>
       <div className="max-w-7xl mx-auto py-8 px-6 sm:px-8 lg:px-10">
         <div className="bg-white rounded-xl shadow-md p-8 mb-10">
           <h1 className="text-3xl font-bold text-gray-900">Welcome back, {username}!</h1>

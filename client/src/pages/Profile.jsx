@@ -108,7 +108,9 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      
+      <br/>
+      <br/>
+      <br/>
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">My Profile</h1>
         
