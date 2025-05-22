@@ -6,11 +6,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/rythmokay/golang/database"
-	"github.com/rythmokay/golang/models"
+	"github.com/rythmokay/golang/server/database"
+	"github.com/rythmokay/golang/server/models"
 )
 
-// GetAllProductsHandler returns all available products for the shop
+// GetAllProductsHandler returns all available products for the shop, with optional category filter
 func GetAllProductsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetAllProductsHandler called with method: %s from %s", r.Method, r.RemoteAddr)
 
@@ -30,23 +30,49 @@ func GetAllProductsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get all products
+	// Check if category filter is provided
+	category := r.URL.Query().Get("category")
+	
+	var rows *sql.Rows
+	var err error
+	
+	// Get products with optional category filter
 	log.Println("Querying database for products...")
-
-	rows, err := database.DB.Query(`
-		SELECT 
-			p.id, 
-			p.name, 
-			p.description, 
-			p.price, 
-			p.stock, 
-			p.category, 
-			p.image_url, 
-			COALESCE(u.name, 'Unknown Seller') as seller_name
-		FROM products p
-		LEFT JOIN users u ON p.seller_id = u.id
-		ORDER BY p.created_at DESC
-	`)
+	
+	if category != "" && category != "all" {
+		log.Printf("Filtering by category: %s", category)
+		rows, err = database.DB.Query(`
+			SELECT 
+				p.id, 
+				p.name, 
+				p.description, 
+				p.price, 
+				p.stock, 
+				p.category, 
+				p.image_url, 
+				COALESCE(u.name, 'Unknown Seller') as seller_name
+			FROM products p
+			LEFT JOIN users u ON p.seller_id = u.id
+			WHERE p.category = $1
+			ORDER BY p.created_at DESC
+		`, category)
+	} else {
+		log.Println("No category filter or 'all' selected, returning all products")
+		rows, err = database.DB.Query(`
+			SELECT 
+				p.id, 
+				p.name, 
+				p.description, 
+				p.price, 
+				p.stock, 
+				p.category, 
+				p.image_url, 
+				COALESCE(u.name, 'Unknown Seller') as seller_name
+			FROM products p
+			LEFT JOIN users u ON p.seller_id = u.id
+			ORDER BY p.created_at DESC
+		`)
+	}
 
 	if err != nil {
 		log.Printf("Error fetching products: %v", err)
@@ -196,6 +222,85 @@ func GetCartItemsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(cartItems)
+}
+
+// GetProductCategoriesHandler returns all unique product categories
+func GetProductCategoriesHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetProductCategoriesHandler called with method: %s from %s", r.Method, r.RemoteAddr)
+
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+
+	// Handle preflight request
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get all unique categories
+	log.Println("Querying database for unique product categories...")
+
+	rows, err := database.DB.Query(`
+		SELECT DISTINCT category 
+		FROM products 
+		WHERE category IS NOT NULL AND category != ''
+		ORDER BY category ASC
+	`)
+
+	if err != nil {
+		log.Printf("Error fetching categories: %v", err)
+		http.Error(w, "Failed to fetch categories", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("Successfully executed query")
+	defer rows.Close()
+
+	var categories []string
+	for rows.Next() {
+		var category string
+		err := rows.Scan(&category)
+		if err != nil {
+			log.Printf("Error scanning category: %v", err)
+			continue
+		}
+		categories = append(categories, category)
+	}
+
+	// Check for any errors during iteration
+	if err = rows.Err(); err != nil {
+		log.Printf("Error iterating over categories: %v", err)
+		http.Error(w, "Error reading categories", http.StatusInternalServerError)
+		return
+	}
+
+	// Always return an array, even if empty
+	if categories == nil {
+		categories = make([]string, 0)
+	}
+
+	response := struct {
+		Success    bool     `json:"success"`
+		Categories []string `json:"categories"`
+	}{
+		Success:    true,
+		Categories: categories,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding response to JSON: %v", err)
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Successfully returned %d categories", len(categories))
 }
 
 // UpdateCartItemHandler updates the quantity of a cart item

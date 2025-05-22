@@ -1,22 +1,67 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Minus, AlertCircle } from 'lucide-react';
+import { AlertCircle, ShoppingCart, Plus } from 'lucide-react';
+import ProductFilter from '../components/ProductFilter';
 
 const Shop = () => {
   console.log('Shop component rendered');
   const [products, setProducts] = useState([]);
-  const [cartItems, setCartItems] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [productCounts, setProductCounts] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [cartOpen, setCartOpen] = useState(false);
   
   const userId = localStorage.getItem('userId');
 
+
+  // Extract unique categories and count products per category
+  const extractCategoriesAndCounts = (products) => {
+    // Predefined list of categories to ensure they're always available
+    const predefinedCategories = [
+      'Electronics',
+      'Clothing',
+      'Books',
+      'Home & Living',
+      'Sports & Outdoors',
+      'Beauty & Personal Care',
+      'Others'
+    ];
+    
+    const categoriesMap = {};
+    const counts = { all: products.length };
+    
+    // Initialize predefined categories
+    predefinedCategories.forEach(category => {
+      categoriesMap[category] = false; // false means it's predefined but not in products yet
+      counts[category] = 0;
+    });
+    
+    // Process actual products
+    products.forEach(product => {
+      if (product.category && product.category.trim() !== '') {
+        // Mark this category as existing in products
+        categoriesMap[product.category] = true;
+        
+        // Count products per category
+        counts[product.category] = (counts[product.category] || 0) + 1;
+      }
+    });
+    
+    // Get all categories (both predefined and from products)
+    const allCategories = Object.keys(categoriesMap).sort();
+    
+    return {
+      categories: allCategories,
+      productCounts: counts
+    };
+  };
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError('');
-      console.log('Fetching products...');
+      console.log('Fetching all products...');
 
       const response = await fetch('http://localhost:8081/api/shop/products', {
         headers: {
@@ -33,7 +78,19 @@ const Shop = () => {
       const data = await response.json();
       console.log('Received response:', data);
       if (data.success) {
-        setProducts(data.products);
+        setAllProducts(data.products);
+        // Extract categories and counts from products
+        const { categories: extractedCategories, productCounts } = extractCategoriesAndCounts(data.products);
+        setCategories(extractedCategories);
+        setProductCounts(productCounts);
+        
+        // Apply initial filtering
+        if (selectedCategory === 'all') {
+          setProducts(data.products);
+        } else {
+          const filtered = data.products.filter(product => product.category === selectedCategory);
+          setProducts(filtered);
+        }
       } else {
         throw new Error('Failed to fetch products');
       }
@@ -45,38 +102,33 @@ const Shop = () => {
     }
   };
 
-  const fetchCartItems = async () => {
-    try {
-      if (!userId) {
-        setCartItems([]);
-        return;
-      }
-      const response = await fetch(`http://localhost:8081/api/cart?user_id=${userId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch cart items');
-      }
-      const data = await response.json();
-      setCartItems(data || []);
-    } catch (err) {
-      console.error('Error fetching cart items:', err);
-      setCartItems([]);
-    }
+  // Custom event to notify Header component to refresh cart
+  const triggerCartRefresh = () => {
+    const event = new CustomEvent('refreshCart');
+    window.dispatchEvent(event);
   };
 
   useEffect(() => {
     console.log('Shop useEffect triggered');
     fetchProducts();
-    if (userId) {
-      fetchCartItems();
-    }
   }, []);
-
-  // Separate useEffect for cart items
+  
+  // Effect to filter products when category changes
   useEffect(() => {
-    if (userId) {
-      fetchCartItems();
+    if (!allProducts.length) return;
+    
+    if (selectedCategory === 'all') {
+      setProducts(allProducts);
+    } else {
+      const filtered = allProducts.filter(product => product.category === selectedCategory);
+      setProducts(filtered);
     }
-  }, [userId]);
+  }, [selectedCategory, allProducts]);
+  
+  const handleCategoryChange = (category) => {
+    console.log(`Changing category to: ${category}`);
+    setSelectedCategory(category);
+  };
 
   const addToCart = async (productId) => {
     if (!userId) {
@@ -100,41 +152,15 @@ const Shop = () => {
 
       if (!response.ok) throw new Error('Failed to add to cart');
       
-      // Refresh cart items
-      fetchCartItems();
+      // Trigger cart refresh in Header
+      triggerCartRefresh();
     } catch (err) {
       console.error('Error adding to cart:', err);
       alert('Failed to add item to cart');
     }
   };
 
-  const updateCartItem = async (itemId, newQuantity) => {
-    try {
-      const response = await fetch('http://localhost:8081/api/cart/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          id: itemId,
-          quantity: newQuantity
-        })
-      });
 
-      if (!response.ok) throw new Error('Failed to update cart');
-      
-      // Refresh cart items
-      fetchCartItems();
-    } catch (err) {
-      console.error('Error updating cart:', err);
-      alert('Failed to update cart');
-    }
-  };
-
-  const calculateTotal = () => {
-    return cartItems?.reduce((total, item) => total + (item.product.price * item.quantity), 0) || 0;
-  };
 
   if (loading) {
     return (
@@ -146,91 +172,20 @@ const Shop = () => {
 
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8">
-      {/* Cart Icon */}
-      <div className="fixed top-20 right-4 z-50">
-        <button
-          onClick={() => setCartOpen(!cartOpen)}
-          className="bg-rose-500 text-white p-3 rounded-full shadow-lg hover:bg-rose-600 transition-colors duration-200"
-        >
-          <ShoppingCart className="h-6 w-6" />
-          {(cartItems || []).length > 0 && (
-            <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-              {(cartItems || []).reduce((total, item) => total + item.quantity, 0)}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* Cart Sidebar */}
-      {cartOpen && (
-        <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-40 transform transition-transform duration-300 ease-in-out">
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Shopping Cart</h2>
-                <button
-                  onClick={() => setCartOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {!cartItems?.length ? (
-                <p className="text-gray-500 text-center">Your cart is empty</p>
-              ) : (
-                <div className="space-y-4">
-                  {(cartItems || []).map((item) => (
-                    <div key={item.id} className="flex items-center space-x-4 bg-white p-4 rounded-lg shadow-sm">
-                      {item.product.image_url && (
-                        <img
-                          src={item.product.image_url}
-                          alt={item.product.name}
-                          className="h-16 w-16 object-cover rounded-md"
-                        />
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-medium">{item.product.name}</h3>
-                        <p className="text-gray-500">${item.product.price.toFixed(2)}</p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => updateCartItem(item.id, item.quantity - 1)}
-                          className="p-1 rounded-full hover:bg-gray-100"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-8 text-center">{item.quantity}</span>
-                        <button
-                          onClick={() => updateCartItem(item.id, item.quantity + 1)}
-                          className="p-1 rounded-full hover:bg-gray-100"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {(cartItems || []).length > 0 && (
-              <div className="border-t p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-semibold">Total:</span>
-                  <span className="font-semibold">${calculateTotal().toFixed(2)}</span>
-                </div>
-                <button className="w-full bg-rose-500 text-white py-2 px-4 rounded-md hover:bg-rose-600 transition-colors duration-200">
-                  Checkout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
+        <br/>
+        <br/>
+        
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Shop</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Shop</h1>
+        </div>
+        
+        <ProductFilter 
+          categories={categories} 
+          selectedCategory={selectedCategory} 
+          onCategoryChange={handleCategoryChange}
+          productCounts={productCounts}
+        />
 
         {error && (
           <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-md flex items-center space-x-2">
@@ -242,7 +197,15 @@ const Shop = () => {
         {products.length === 0 ? (
           <div className="flex flex-col justify-center items-center h-64 text-gray-500">
             <ShoppingCart className="h-12 w-12 mb-4" />
-            <p>No products available</p>
+            <p className="text-lg">{selectedCategory === 'all' ? 'No products available' : `No products found in category "${selectedCategory}"`}</p>
+            {selectedCategory !== 'all' && (
+              <button 
+                onClick={() => handleCategoryChange('all')} 
+                className="mt-4 px-4 py-2 bg-rose-500 text-white rounded-md hover:bg-rose-600 transition-colors"
+              >
+                View All Products
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -259,7 +222,7 @@ const Shop = () => {
                   <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
                   <p className="mt-1 text-sm text-gray-500">{product.description}</p>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-lg font-semibold">${product.price.toFixed(2)}</span>
+                    <span className="text-lg font-semibold">₹{product.price.toFixed(2)}</span>
                     <button
                       onClick={() => addToCart(product.id)}
                       className="flex items-center space-x-1 bg-rose-500 text-white px-3 py-1 rounded-md hover:bg-rose-600 transition-colors duration-200"

@@ -9,9 +9,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/rythmokay/golang/config"
-	"github.com/rythmokay/golang/database"
-	"github.com/rythmokay/golang/models"
+	"github.com/rythmokay/golang/server/config"
+	"github.com/rythmokay/golang/server/database"
+	"github.com/rythmokay/golang/server/models"
 )
 
 // SignupHandler handles user registration
@@ -159,6 +159,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("✅ Password correct for user: %s", input.Email)
 
+	// Generate a simple token (in a real app, use JWT or other secure token)
+	token := "auth-token-" + stored.Email // Simple token for demo purposes
+
+	// Log successful login with role information
+	log.Printf("✅ Login successful for user: %s with role: %s", stored.Email, stored.Role)
+
 	// Successful login
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -167,5 +173,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		"name":    stored.Name,
 		"email":   stored.Email,
 		"role":    stored.Role,
+		"token":   token,
 	})
 }

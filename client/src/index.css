@@ -9,3 +9,42 @@
     scrollbar-width: none;     /* Firefox */
   }
   
+/* Global link styling - remove all default link styling */
+a {
+  text-decoration: none !important;
+  color: inherit !important;
+  outline: none !important;
+}
+
+/* Ensure links in the header have no default styling */
+header a {
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+/* Ensure links in the footer have no default styling */
+footer a {
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+/* Remove focus outline for mouse users but keep it for keyboard navigation */
+a:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* Only show outline for keyboard navigation */
+a:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.1) !important;
+  outline-offset: 2px !important;
+}
+
+/* Square cart button styles */
+.square-cart-button {
+  border-radius: 0 !important;
+  overflow: hidden;
+}
+
+.square-cart-badge {
+  border-radius: 0 !important;
+}

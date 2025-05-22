@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rythmokay/golang/database"
-	"github.com/rythmokay/golang/models"
+	"github.com/rythmokay/golang/server/database"
+	"github.com/rythmokay/golang/server/models"
 )
 
 // CreateProductHandler handles the creation of a new product
@@ -70,23 +70,39 @@ func CreateProductHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetSellerProductsHandler handles fetching all products for a seller
 func GetSellerProductsHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔍 Received request to get seller products")
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Check for authentication token
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		log.Printf("❌ Missing authorization header")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Authentication required"})
 		return
 	}
 
 	// Get seller ID from query parameter
 	sellerIDStr := r.URL.Query().Get("seller_id")
 	if sellerIDStr == "" {
+		log.Printf("❌ Missing seller_id parameter")
 		http.Error(w, "Seller ID is required", http.StatusBadRequest)
 		return
 	}
 
 	sellerID, err := strconv.Atoi(sellerIDStr)
 	if err != nil {
+		log.Printf("❌ Invalid seller ID format: %s", sellerIDStr)
 		http.Error(w, "Invalid seller ID", http.StatusBadRequest)
 		return
 	}
+	
+	// In a real application, you would verify the token and check if the user
+	// has the seller role and is authorized to access these products
+	// For now, we'll just log the request
 
 	// Query products from database
 	query := `

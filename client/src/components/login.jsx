@@ -39,6 +39,8 @@ function Login() {
     setLoading(true); // Show loading spinner or disable submit button during request
 
     try {
+      console.log('Attempting login with:', formData);
+      
       // Send login request to backend
       const response = await fetch('http://localhost:8081/api/login', {
         method: 'POST',
@@ -52,7 +54,7 @@ function Login() {
 
       if (response.ok) {
         // Store user data in localStorage
-        localStorage.setItem('token', 'dummy-token'); // We'll implement proper tokens later
+        localStorage.setItem('token', data.token || 'dummy-token'); // Use token from response if available
         localStorage.setItem('userId', data.id);
         localStorage.setItem('username', data.name);
         localStorage.setItem('role', data.role);
@@ -60,10 +62,15 @@ function Login() {
         // Trigger storage event to update header
         window.dispatchEvent(new Event('storage'));
 
-        // Navigate to seller dashboard if user is a seller, otherwise go to home
+        // Navigate to seller products page if user is a seller, otherwise go to home
         if (data.role === 'seller') {
-          navigate('/seller');
+          console.log('Seller login detected, redirecting to product management');
+          // Add a small delay to ensure localStorage is updated before navigation
+          setTimeout(() => {
+            navigate('/seller/products');
+          }, 100);
         } else {
+          console.log('Customer login detected, redirecting to home');
           navigate('/');
         }
       } else {
@@ -78,69 +85,133 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-indigo-50 via-purple-50 to-white">
+      <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+        
+        @keyframes fadeIn {
+          0% { opacity: 0; transform: translateY(15px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+          0% { transform: translateY(15px); opacity: 0; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .login-card {
+          animation: fadeIn 0.6s ease-out;
+          box-shadow: 0 10px 25px rgba(124, 58, 237, 0.08);
+          font-family: 'Poppins', sans-serif;
+        }
+        .login-input {
+          transition: all 0.3s ease;
+          font-family: 'Poppins', sans-serif;
+          font-weight: 300;
+        }
+        .login-input:focus {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+        }
+        .login-button {
+          transition: all 0.3s ease;
+          background: linear-gradient(90deg, #6366f1, #8b5cf6);
+          background-size: 200% 100%;
+          animation: shimmer 3s infinite linear;
+        }
+        .login-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+        }
+        .heading-text {
+          background: linear-gradient(90deg, #4f46e5, #7c3aed);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          font-family: 'Poppins', sans-serif;
+          font-weight: 600;
+        }
+      `}</style>
       <main className="flex-grow flex items-center justify-center p-4">
-        <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-md">
-          <h1 className="mb-6 text-2xl font-medium text-center text-gray-800">Welcome back</h1>
+        <div className="w-full max-w-sm p-6 bg-white border border-purple-100 rounded-2xl login-card">
+          <h1 className="mb-5 text-xl font-semibold text-center heading-text">Welcome Back</h1>
 
           {/* Display error if login fails */}
-          {loginError && <div className="text-red-500 text-center mb-4">{loginError}</div>}
+          {loginError && (
+            <div className="mb-5 p-3 bg-red-50 text-red-500 text-sm rounded-xl text-center" 
+                 style={{animation: 'slideUp 0.4s ease-out', fontFamily: 'Poppins, sans-serif', fontWeight: 400}}>
+              {loginError}
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block mb-2 text-sm font-medium text-indigo-900" 
+                     style={{fontFamily: 'Poppins, sans-serif', animation: 'slideUp 0.3s ease-out'}}>
+                Email
+              </label>
               <input
                 type="email"
                 name="email"
-                placeholder="Email address"
-                className="w-full px-3 py-2 text-sm bg-gray-50 border-b border-gray-300 focus:border-red-400 focus:outline-none"
+                placeholder="your@email.com"
+                className="w-full px-3 py-2.5 text-sm text-indigo-900 bg-indigo-50 border border-indigo-100 rounded-xl focus:border-purple-300 focus:outline-none login-input"
                 value={formData.email}
                 onChange={handleChange}
+                style={{animation: 'slideUp 0.4s ease-out'}}
               />
-              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+              {errors.email && <p className="mt-2 text-sm text-red-500" style={{fontFamily: 'Poppins, sans-serif'}}>{errors.email}</p>}
             </div>
 
-            <div className="mb-6 relative">
-              <div className="flex items-center">
+            <div>
+              <label className="block mb-2 text-sm font-medium text-indigo-900" 
+                     style={{fontFamily: 'Poppins, sans-serif', animation: 'slideUp 0.4s ease-out'}}>
+                Password
+              </label>
+              <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="Password"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border-b border-gray-300 focus:border-red-400 focus:outline-none pr-10"
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2.5 text-sm text-indigo-900 bg-indigo-50 border border-indigo-100 rounded-xl focus:border-purple-300 focus:outline-none pr-10 login-input"
                   value={formData.password}
                   onChange={handleChange}
+                  style={{animation: 'slideUp 0.5s ease-out'}}
                 />
                 <button
                   type="button"
-                  className="absolute right-2 text-gray-500"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-400 hover:text-purple-600 transition-colors duration-200"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ?
-                    <EyeOffIcon size={16} /> :
-                    <EyeIcon size={16} />
-                  }
+                  {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
                 </button>
               </div>
-              {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+              {errors.password && <p className="mt-2 text-sm text-red-500" style={{fontFamily: 'Poppins, sans-serif'}}>{errors.password}</p>}
             </div>
-
-            <button
-              type="submit"
-              className="w-full py-2 text-sm font-medium text-white bg-red-400 rounded-md hover:bg-red-500"
-              disabled={loading}
-            >
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
+            
+            <div className="pt-2">
+              <button
+                type="submit"
+                className="w-full py-2.5 px-3 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-md transition-all duration-300 focus:outline-none login-button"
+                disabled={loading}
+                style={{animation: 'slideUp 0.6s ease-out', fontFamily: 'Poppins, sans-serif'}}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+            </div>
           </form>
 
-          <div className="mt-6 text-center">
-            <Link to="/signup" className="text-xs text-gray-600 hover:text-red-400">
-              Don't have an account? Sign up
+          <div className="mt-6 text-center" style={{animation: 'slideUp 0.7s ease-out'}}>
+            <Link 
+              to="/signup" 
+              className="inline-block py-2 px-4 text-sm font-medium text-indigo-600 border border-indigo-300 hover:border-indigo-400 bg-white rounded-md transition-all duration-300" 
+              style={{fontFamily: 'Poppins, sans-serif'}}
+            >
+              Don't have an account? <span className="font-medium">Sign up</span>
             </Link>
           </div>
         </div>
       </main>
-
     </div>
   );
 }

@@ -8,5 +8,5 @@ const (
 	// ServerPort is the port the server will listen on
 	ServerPort = ":8081"
 	// AllowedOrigin is the allowed CORS origin
-	AllowedOrigin = "http://localhost:5173"
+	AllowedOrigin = "http://localhost:3000"
 )

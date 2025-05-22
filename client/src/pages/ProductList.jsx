@@ -1,34 +1,91 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+// Import services with error handling
+const API_URL = 'http://localhost:8081/api';
+
+// Safe version of getSellerProducts that handles errors gracefully
+const safeGetSellerProducts = async (sellerId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/products/seller?seller_id=${sellerId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching seller products:', error);
+    return [];
+  }
+};
+
+// Safe version of deleteProduct that handles errors gracefully
+const safeDeleteProduct = async (productId, sellerId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.delete(`${API_URL}/products/delete?product_id=${productId}&seller_id=${sellerId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    throw new Error('Failed to delete product');
+  }
+};
 
 const ProductList = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isSeller, setIsSeller] = useState(true);
 
+  const checkAuth = () => {
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('role');
+    
+    if (!token) {
+      setIsAuthenticated(false);
+      return false;
+    }
+    
+    if (userRole !== 'seller') {
+      setIsSeller(false);
+      return false;
+    }
+    
+    return true;
+  };
+  
   const fetchProducts = async () => {
     try {
+      // Check authentication first
+      if (!checkAuth()) {
+        setLoading(false);
+        return;
+      }
+      
       const sellerId = localStorage.getItem('userId');
       if (!sellerId) {
-        throw new Error('Please login first');
+        setError('User ID not found');
+        setLoading(false);
+        return;
       }
 
-      const response = await fetch(`http://localhost:8081/api/products/seller?seller_id=${sellerId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
-      }
-
-      const data = await response.json();
-      setProducts(data);
+      const data = await safeGetSellerProducts(sellerId);
+      setProducts(Array.isArray(data) ? data : []);
       setError('');
     } catch (err) {
-      setError(err.message);
+      console.error('Error in fetchProducts:', err);
+      setError('Failed to load products. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -46,30 +103,24 @@ const ProductList = () => {
     setDeleteId(productId);
     try {
       const sellerId = localStorage.getItem('userId');
-      const response = await fetch(
-        `http://localhost:8081/api/products/delete?product_id=${productId}&seller_id=${sellerId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to delete product');
+      if (!sellerId) {
+        throw new Error('User ID not found');
       }
+      
+      await safeDeleteProduct(productId, sellerId);
 
       // Refresh the product list
       await fetchProducts();
     } catch (err) {
-      setError(err.message);
+      console.error('Error in handleDelete:', err);
+      setError(err.message || 'Failed to delete product');
     } finally {
       setDeleteId(null);
     }
   };
 
-  if (!localStorage.getItem('token')) {
+  // Render authentication check
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
@@ -81,10 +132,26 @@ const ProductList = () => {
       </div>
     );
   }
+  
+  // Render role check
+  if (!isSeller) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Only sellers can access this page</h2>
+          <Link to="/" className="text-indigo-600 hover:text-indigo-800">
+            Go to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+
+        
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900">My Products</h2>
           <Link
@@ -128,7 +195,7 @@ const ProductList = () => {
                           <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
                           <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
                             <span>Category: {product.category}</span>
-                            <span>Price: ${product.price.toFixed(2)}</span>
+                            <span>Price: ₹{product.price.toFixed(2)}</span>
                             <span>Stock: {product.stock}</span>
                           </div>
                           {product.description && (

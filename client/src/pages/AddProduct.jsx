@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { createProduct } from '../services/productService';
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -43,30 +44,25 @@ const AddProduct = () => {
         image_url: formData.image_url
       };
 
-      const response = await fetch('http://localhost:8081/api/products/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(productData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create product');
-      }
+      console.log('Adding product:', productData);
+      
+      await createProduct(productData);
+      
+      // Show success message
+      alert('Product added successfully!');
 
       // Navigate to products list after successful creation
       navigate('/seller/products');
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+
+      
       <div className="max-w-2xl mx-auto">
         <div className="bg-white shadow-lg rounded-lg p-6 md:p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Product</h2>
@@ -114,7 +110,7 @@ const AddProduct = () => {
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">$</span>
+                    <span className="text-gray-500 sm:text-sm">Rs</span>
                   </div>
                   <input
                     type="number"
@@ -163,9 +159,9 @@ const AddProduct = () => {
                 <option value="Electronics">Electronics</option>
                 <option value="Clothing">Clothing</option>
                 <option value="Books">Books</option>
-                <option value="Home">Home & Living</option>
-                <option value="Sports">Sports & Outdoors</option>
-                <option value="Beauty">Beauty & Personal Care</option>
+                <option value="Home & Living">Home & Living</option>
+                <option value="Sports & Outdoors">Sports & Outdoors</option>
+                <option value="Beauty & Personal Care">Beauty & Personal Care</option>
                 <option value="Others">Others</option>
               </select>
             </div>

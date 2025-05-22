@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) UNIQUE NOT NULL CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
     password VARCHAR(100) NOT NULL CHECK (length(password) >= 6),
     role VARCHAR(20) NOT NULL CHECK (role IN ('seller', 'customer')),
+    address VARCHAR(255),
+    phone_number VARCHAR(20),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

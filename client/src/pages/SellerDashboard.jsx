@@ -37,49 +37,49 @@ const SellerDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
+    <div className="min-h-screen bg-gray-50 pt-6">
+      <div className="max-w-7xl mx-auto py-8 px-6 sm:px-8 lg:px-10">
+        <div className="bg-white rounded-xl shadow-md p-8 mb-10">
           <h1 className="text-3xl font-bold text-gray-900">Welcome back, {username}!</h1>
-          <p className="mt-2 text-sm text-gray-600">Manage your store and products from your dashboard</p>
+          <p className="mt-3 text-md text-gray-600">Manage your store and products from your dashboard</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map((card) => (
             <Link
               key={card.title}
               to={card.link}
-              className="relative group bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+              className="relative group bg-white p-7 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
             >
-              <div className={`absolute right-4 top-4 p-2 rounded-full ${card.color} bg-opacity-10 group-hover:bg-opacity-20 transition-colors duration-200`}>
+              <div className={`absolute right-5 top-5 p-3 rounded-full ${card.color} bg-opacity-15 group-hover:bg-opacity-25 transition-colors duration-200`}>
                 <div className={`${card.color.replace('bg-', 'text-')}`}>
                   {card.icon}
                 </div>
               </div>
-              <div className="pr-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{card.title}</h3>
+              <div className="pr-10">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{card.title}</h3>
                 <p className="text-sm text-gray-600">{card.description}</p>
               </div>
             </Link>
           ))}
         </div>
 
-        <div className="mt-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <PlusCircle className="h-5 w-5 mr-2 text-gray-500" />
+        <div className="mt-16">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6 pl-2 border-l-4 border-indigo-500">Quick Actions</h2>
+          <div className="bg-white rounded-xl shadow-md p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Link to="/seller/products/add" className="flex items-center justify-center px-6 py-4 border border-transparent rounded-lg text-base font-medium text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 shadow-sm">
+                <PlusCircle className="h-6 w-6 mr-3" />
                 Add New Product
-              </button>
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <Package className="h-5 w-5 mr-2 text-gray-500" />
+              </Link>
+              <Link to="/seller/products" className="flex items-center justify-center px-6 py-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200 shadow-sm">
+                <Package className="h-6 w-6 mr-3" />
                 View Products
-              </button>
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <Settings className="h-5 w-5 mr-2 text-gray-500" />
-                Store Settings
-              </button>
+              </Link>
+              <Link to="/seller/orders" className="flex items-center justify-center px-6 py-4 border border-transparent rounded-lg text-base font-medium text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200 shadow-sm">
+                <ShoppingBag className="h-6 w-6 mr-3" />
+                Manage Orders
+              </Link>
             </div>
           </div>
         </div>
